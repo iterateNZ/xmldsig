@@ -1,6 +1,6 @@
 module Xmldsig
   class SignedDocument
-    attr_accessor :document, :id_attr, :force
+    attr_accessor :document, :id_attr, :force, :referenced_documents, :namespaces
 
     def initialize(document, options = {})
       @document = if document.kind_of?(Nokogiri::XML::Document)
@@ -10,6 +10,8 @@ module Xmldsig
       end
       @id_attr  = options[:id_attr] if options[:id_attr]
       @force    = options[:force]
+      @referenced_documents = {}
+      @namespaces = NAMESPACES.dup
     end
 
     def validate(certificate = nil, schema = nil, &block)
@@ -33,9 +35,9 @@ module Xmldsig
     end
 
     def signatures
-      document.xpath("//ds:Signature", NAMESPACES).
+      document.xpath("//ds:Signature", @namespaces).
           sort { |left, right| left.ancestors.size <=> right.ancestors.size }.
-          collect { |node| Signature.new(node, @id_attr) } || []
+          collect { |node| Signature.new(node, @id_attr, @namespaces, @referenced_documents) } || []
     end
   end
 end

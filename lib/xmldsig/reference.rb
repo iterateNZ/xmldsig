@@ -5,10 +5,12 @@ module Xmldsig
     class ReferencedNodeNotFound < Exception;
     end
 
-    def initialize(reference, id_attr = nil)
+    def initialize(reference, id_attr = nil, namespaces = NAMESPACES, referenced_documents = {})
       @reference = reference
       @errors    = []
       @id_attr = id_attr
+      @namespaces = namespaces
+      @referenced_documents = referenced_documents
     end
 
     def document
@@ -21,16 +23,21 @@ module Xmldsig
 
     def referenced_node
       if reference_uri && reference_uri != ""
-        id = reference_uri[1..-1]
-        referenced_node_xpath = @id_attr ? "//*[@#{@id_attr}=$uri]" : "//*[@ID=$uri or @wsu:Id=$uri]"
-        variable_bindings = { 'uri' => id }
-        if ref = document.dup.at_xpath(referenced_node_xpath, NAMESPACES, variable_bindings)
-          ref
+        if @id_attr.nil? && reference_uri.start_with?("cid:")
+          content_id = reference_uri[4..-1]
+          @referenced_documents[content_id] || raise(ReferencedNodeNotFound, "Could not find referenced document with ContentId #{content_id}")
         else
-          raise(
-              ReferencedNodeNotFound,
-              "Could not find the referenced node #{id}'"
-          )
+          id = reference_uri[1..-1]
+          referenced_node_xpath = @id_attr ? "//*[@#{@id_attr}=$uri]" : "//*[@ID=$uri or @wsu:Id=$uri]"
+          variable_bindings = { 'uri' => id }
+          if ref = document.dup.at_xpath(referenced_node_xpath, @namespaces, variable_bindings)
+            ref
+          else
+            raise(
+                ReferencedNodeNotFound,
+                "Could not find the referenced node #{id}'"
+            )
+          end
         end
       else
         document.dup.root
@@ -42,7 +49,7 @@ module Xmldsig
     end
 
     def digest_value
-      Base64.decode64 reference.at_xpath("descendant::ds:DigestValue", NAMESPACES).content
+      Base64.decode64 reference.at_xpath("descendant::ds:DigestValue", @namespaces).content
     end
 
     def calculate_digest_value
@@ -56,7 +63,7 @@ module Xmldsig
     end
 
     def digest_method
-      algorithm = reference.at_xpath("descendant::ds:DigestMethod", NAMESPACES).get_attribute("Algorithm")
+      algorithm = reference.at_xpath("descendant::ds:DigestMethod", @namespaces).get_attribute("Algorithm")
       case algorithm =~ /sha(.*?)$/i && $1.to_i
         when 512
           Digest::SHA512
@@ -70,12 +77,12 @@ module Xmldsig
     end
 
     def digest_value=(digest_value)
-      reference.at_xpath("descendant::ds:DigestValue", NAMESPACES).content =
+      reference.at_xpath("descendant::ds:DigestValue", @namespaces).content =
           Base64.strict_encode64(digest_value).chomp
     end
 
     def transforms
-      Transforms.new(reference.xpath("descendant::ds:Transform", NAMESPACES))
+      Transforms.new(reference.xpath("descendant::ds:Transform", @namespaces), @namespaces)
     end
 
     def validate_digest_value
