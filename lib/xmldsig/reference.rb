@@ -57,7 +57,7 @@ module Xmldsig
       case transformed
         when String
           digest_method.digest transformed
-        when Nokogiri::XML::Node
+        when Nokogiri::XML::Node, Nokogiri::XML::Element
           digest_method.digest Canonicalizer.new(transformed).canonicalize
       end
     end
