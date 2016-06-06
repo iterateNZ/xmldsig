@@ -36,8 +36,8 @@ module Xmldsig
 
     def signatures
       document.xpath("//ds:Signature", @namespaces).
-          sort { |left, right| left.ancestors.size <=> right.ancestors.size }.
-          collect { |node| Signature.new(node, @id_attr, @namespaces, @referenced_documents) } || []
+        sort { |left, right| left.ancestors.size <=> right.ancestors.size }.
+        collect { |node| Signature.new(node, @id_attr, @namespaces, @referenced_documents) } || []
     end
   end
 end

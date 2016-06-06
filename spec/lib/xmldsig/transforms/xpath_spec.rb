@@ -14,7 +14,6 @@ describe Xmldsig::Transforms::XPath do
 
   it 'filters out the nodes matching the xpath expression' do
     transformed_node = xpath_transform.transform
-    all_match_xpath_query = transform_node.children.all? { |n| n.xpath(expected_xpath_query) }
-    expect(all_match_xpath_query).to be true
+    expect(transform_node.children).to all(satisfy { |n| n.xpath(expected_xpath_query) })
   end
 end
