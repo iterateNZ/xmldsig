@@ -90,7 +90,7 @@ describe Xmldsig::Reference do
       end
 
       it "returns the document referenced by the content id" do
-        expect(reference.referenced_node).to eq referenced_document
+        expect(reference.referenced_node.to_xml).to eq referenced_document.to_xml
       end
 
       context "when the document has no referenced_documents matching the referenced name" do
