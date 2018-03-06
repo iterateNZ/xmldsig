@@ -2,16 +2,15 @@ module Xmldsig
   class Signature
     attr_accessor :signature
 
-    def initialize(signature, id_attr = nil, namespaces = NAMESPACES, referenced_documents = {})
+    def initialize(signature, id_attr = nil, referenced_documents = {})
       @signature = signature
       @id_attr = id_attr
-      @namespaces = namespaces
       @referenced_documents = referenced_documents
     end
 
     def references
-      @references ||= signature.xpath("descendant::ds:Reference", @namespaces).map do |node|
-        Reference.new(node, @id_attr, @namespaces, @referenced_documents)
+      @references ||= signature.xpath("descendant::ds:Reference", NAMESPACES).map do |node|
+        Reference.new(node, @id_attr, @referenced_documents)
       end
     end
 
@@ -25,11 +24,11 @@ module Xmldsig
     end
 
     def signed_info
-      signature.at_xpath("descendant::ds:SignedInfo", @namespaces)
+      signature.at_xpath("descendant::ds:SignedInfo", NAMESPACES)
     end
 
     def signature_value
-      Base64.decode64 signature.at_xpath("descendant::ds:SignatureValue", @namespaces).content
+      Base64.decode64 signature.at_xpath("descendant::ds:SignatureValue", NAMESPACES).content
     end
 
     def valid?(certificate = nil, schema = nil, &block)
@@ -52,7 +51,7 @@ module Xmldsig
     private
 
     def canonicalization_method
-      signed_info.at_xpath("descendant::ds:CanonicalizationMethod", @namespaces).get_attribute("Algorithm")
+      signed_info.at_xpath("descendant::ds:CanonicalizationMethod", NAMESPACES).get_attribute("Algorithm")
     end
 
     def canonicalized_signed_info
@@ -81,7 +80,7 @@ module Xmldsig
     end
 
     def signature_algorithm
-      signed_info.at_xpath("descendant::ds:SignatureMethod", @namespaces).get_attribute("Algorithm")
+      signed_info.at_xpath("descendant::ds:SignatureMethod", NAMESPACES).get_attribute("Algorithm")
     end
 
     def signature_method
@@ -99,7 +98,7 @@ module Xmldsig
     end
 
     def signature_value=(signature_value)
-      signature.at_xpath("descendant::ds:SignatureValue", @namespaces).content =
+      signature.at_xpath("descendant::ds:SignatureValue", NAMESPACES).content =
           Base64.strict_encode64(signature_value).chomp
     end
 

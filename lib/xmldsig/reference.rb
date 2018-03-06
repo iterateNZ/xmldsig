@@ -5,11 +5,10 @@ module Xmldsig
     class ReferencedNodeNotFound < Exception;
     end
 
-    def initialize(reference, id_attr = nil, namespaces = NAMESPACES, referenced_documents = {})
+    def initialize(reference, id_attr = nil, referenced_documents = {})
       @reference = reference
       @errors    = []
       @id_attr = id_attr
-      @namespaces = namespaces
       @referenced_documents = referenced_documents
     end
 
@@ -34,7 +33,7 @@ module Xmldsig
           id = reference_uri[1..-1]
           referenced_node_xpath = @id_attr ? "//*[@#{@id_attr}=$uri]" : "//*[@ID=$uri or @wsu:Id=$uri]"
           variable_bindings = { 'uri' => id }
-          if ref = document.dup.at_xpath(referenced_node_xpath, @namespaces, variable_bindings)
+          if ref = document.dup.at_xpath(referenced_node_xpath, NAMESPACES, variable_bindings)
             ref
           else
             raise(
@@ -53,7 +52,7 @@ module Xmldsig
     end
 
     def digest_value
-      Base64.decode64 reference.at_xpath("descendant::ds:DigestValue", @namespaces).content
+      Base64.decode64 reference.at_xpath("descendant::ds:DigestValue", NAMESPACES).content
     end
 
     def calculate_digest_value
@@ -61,13 +60,13 @@ module Xmldsig
       case transformed
         when String
           digest_method.digest transformed
-        when Nokogiri::XML::Node, Nokogiri::XML::Element
+        when Nokogiri::XML::Node
           digest_method.digest Canonicalizer.new(transformed).canonicalize
       end
     end
 
     def digest_method
-      algorithm = reference.at_xpath("descendant::ds:DigestMethod", @namespaces).get_attribute("Algorithm")
+      algorithm = reference.at_xpath("descendant::ds:DigestMethod", NAMESPACES).get_attribute("Algorithm")
       case algorithm =~ /sha(.*?)$/i && $1.to_i
         when 512
           Digest::SHA512
@@ -81,12 +80,12 @@ module Xmldsig
     end
 
     def digest_value=(digest_value)
-      reference.at_xpath("descendant::ds:DigestValue", @namespaces).content =
+      reference.at_xpath("descendant::ds:DigestValue", NAMESPACES).content =
           Base64.strict_encode64(digest_value).chomp
     end
 
     def transforms
-      Transforms.new(reference.xpath("descendant::ds:Transform", @namespaces), @namespaces)
+      Transforms.new(reference.xpath("descendant::ds:Transform", NAMESPACES))
     end
 
     def validate_digest_value

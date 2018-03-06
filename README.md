@@ -118,11 +118,9 @@ unsigned_document = Xmldsig::SignedDocument.new(unsigned_xml)
 private_key = OpenSSL::PKey::RSA.new(File.read("key.pem"))
 certificate = OpenSSL::X509::Certificate.new(File.read("certificate.cer"))
 
-# Add any namespaces used in XPath elements in the document
-unsigned_document.namespaces["eb"] = "http://www.ebxml.org/namespaces/messageHeader"
-
 # Add external documents referenced with a 'cid:' prefix
-unsigned_document.referenced_documents["payload"] = Nokogiri::XML(File.read "payload.xml")
+unsigned_document.referenced_documents["payload"] = File.read "payload.xml"
+unsigned_document.referenced_documents["reference_with_transforms"] = Nokogiri::XML(File.read "payload.xml")
 
 signed_xml = unsigned_document.sign(private_key)
 ```

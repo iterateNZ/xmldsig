@@ -1,29 +1,21 @@
 module Xmldsig
   class Transforms < Array
     class XPath < Transform
-      attr_reader :xpath_query, :namespaces
+      attr_reader :xpath_query
 
       REC_XPATH_1991116_QUERY = "(//. | //@* | //namespace::*)"
 
-      def initialize(node, transform_node, namespaces = NAMESPACES)
-        @namespaces = namespaces
-        @xpath_query = transform_node.xpath("ds:XPath/text()", Xmldsig::NAMESPACES).to_s
+      def initialize(node, transform_node)
+        @xpath_query = transform_node.at_xpath("ds:XPath", NAMESPACES).text
         super(node, transform_node)
       end
 
       def transform
-        # Should this be replacing removed nodes with something other than blank lines?
         node.xpath(REC_XPATH_1991116_QUERY)
-          .reject { |n| !n.respond_to?(:xpath) } # namespaces dont repond to xpath
-          .reject { |n| n.xpath(@xpath_query, xpath_query_namespaces) }
-          .map(&:remove)
+          .reject { |n| !n.respond_to?(:xpath) }
+          .reject { |n| n.xpath(@xpath_query, node.namespaces) }
+          .each(&:remove)
         node
-      end
-
-      private
-
-      def xpath_query_namespaces
-        @xpath_query_namespaces ||= node.namespaces.merge(@namespaces)
       end
     end
   end

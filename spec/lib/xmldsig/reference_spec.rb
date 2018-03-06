@@ -83,7 +83,7 @@ describe Xmldsig::Reference do
       let(:document) { Nokogiri::XML::Document.parse File.read("spec/fixtures/unsigned_with_cid_reference.xml") }
       let(:referenced_document) { Nokogiri::XML("<test><ing>present</ing></test>") }
       let(:referenced_documents) { { "fooDocument" => referenced_document } }
-      let(:reference) { Xmldsig::Reference.new(document.at_xpath('//ds:Reference', Xmldsig::NAMESPACES), nil, document.namespaces, referenced_documents) }
+      let(:reference) { Xmldsig::Reference.new(document.at_xpath('//ds:Reference', Xmldsig::NAMESPACES), nil, referenced_documents) }
 
       it "has the correct reference_uri" do
         expect(reference.reference_uri).to eq "cid:fooDocument"
